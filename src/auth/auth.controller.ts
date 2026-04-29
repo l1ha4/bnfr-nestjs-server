@@ -11,11 +11,14 @@ import { Request, Response } from 'express'
 import { AuthService } from './auth.service'
 import { RegisterDto } from './dto/register.dto'
 import { LoginDto } from './dto/login.dto'
+import { Authorization } from './decorators/auth.decorators'
+import { UserRole } from 'generated__/enums'
 
 @Controller('auth')
 export class AuthController {
   public constructor(private readonly authService: AuthService) {}
 
+  @Authorization(UserRole.ADMIN)
   @Post('register')
   @HttpCode(HttpStatus.OK)
   public async register(@Req() req: Request, @Body() dto: RegisterDto) {

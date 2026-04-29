@@ -1,0 +1,43 @@
+model Bot {
+  id     String    @id @default(uuid())
+  name   String
+  avatar String?
+  banner String?
+  token  String
+  status BotStatus @default(STOPPED)
+
+  ownerId String
+  owner User @relation(fields: [ownerId], references: [id])
+  messages BotMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BotMessage {
+  id String @id @default(uuid())
+
+  botId String
+  bot Bot @relation(fields: [botId], references: [id], onDelete: Cascade)
+
+  channelId String
+  guildId String?
+  content String
+  externalMessageId String
+  status BotMessageStatus @default(SENT)
+  errorMessage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum BotStatus {
+  ACTIVE
+  STOPPED
+  ERROR
+}
+
+enum BotMessageStatus {
+  SENT
+  FAILED
+}

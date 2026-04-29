@@ -53,7 +53,9 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   User: 'User',
   Account: 'Account',
-  Token: 'Token'
+  Token: 'Token',
+  Bot: 'Bot',
+  BotMessage: 'BotMessage'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -113,6 +115,37 @@ export const TokenScalarFieldEnum = {
 } as const
 
 export type TokenScalarFieldEnum = (typeof TokenScalarFieldEnum)[keyof typeof TokenScalarFieldEnum]
+
+
+export const BotScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  avatar: 'avatar',
+  banner: 'banner',
+  token: 'token',
+  status: 'status',
+  ownerId: 'ownerId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BotScalarFieldEnum = (typeof BotScalarFieldEnum)[keyof typeof BotScalarFieldEnum]
+
+
+export const BotMessageScalarFieldEnum = {
+  id: 'id',
+  botId: 'botId',
+  channelId: 'channelId',
+  guildId: 'guildId',
+  content: 'content',
+  externalMessageId: 'externalMessageId',
+  status: 'status',
+  errorMessage: 'errorMessage',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BotMessageScalarFieldEnum = (typeof BotMessageScalarFieldEnum)[keyof typeof BotMessageScalarFieldEnum]
 
 
 export const SortOrder = {

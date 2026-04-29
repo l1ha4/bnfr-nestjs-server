@@ -29,7 +29,8 @@ export class UserService {
       throw new Error(`User with id ${id} not found`)
     }
 
-    return user
+    const { password, ...result } = user
+    return result
   }
 
   public async findByEmail(email: string) {

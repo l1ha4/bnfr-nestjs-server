@@ -11,4 +11,6 @@
 export type * from './models/User'
 export type * from './models/Account'
 export type * from './models/Token'
+export type * from './models/Bot'
+export type * from './models/BotMessage'
 export type * from './commonInputTypes'

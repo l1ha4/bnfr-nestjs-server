@@ -32,3 +32,13 @@ export type Account = Prisma.AccountModel
  * 
  */
 export type Token = Prisma.TokenModel
+/**
+ * Model Bot
+ * 
+ */
+export type Bot = Prisma.BotModel
+/**
+ * Model BotMessage
+ * 
+ */
+export type BotMessage = Prisma.BotMessageModel

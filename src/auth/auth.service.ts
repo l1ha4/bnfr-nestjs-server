@@ -19,12 +19,18 @@ import { ConfigService } from '@nestjs/config'
 export class AuthService {
   private readonly logger = new Logger(AuthService.name)
 
-  public constructor(private readonly userService: UserService, private readonly configService: ConfigService) {}
+  public constructor(
+    private readonly userService: UserService,
+    private readonly configService: ConfigService,
+  ) {}
 
   public async register(req: Request, dto: RegisterDto) {
+    this.logger.log(`Попытка регистрации: email=${dto.email}`)
+
     const isExists = await this.userService.findByEmail(dto.email)
 
     if (isExists) {
+      this.logger.warn(`Регистрация отклонена — email уже занят: ${dto.email}`)
       throw new Error('Пользователь с таким email уже существует.')
     }
 
@@ -37,33 +43,58 @@ export class AuthService {
       isVerified: false,
     })
 
+    this.logger.log(
+      `Пользователь зарегистрирован: id=${newUser.id}, email=${newUser.email}`,
+    )
     return this.saveSession(req, newUser)
   }
 
   public async login(req: Request, dto: LoginDto) {
+    this.logger.log(`Попытка входа: email=${dto.email}`)
+
     const user = await this.userService.findByEmail(dto.email)
 
     if (!user || !user.password) {
+      this.logger.warn(
+        `Вход отклонён — пользователь не найден: email=${dto.email}`,
+      )
       throw new NotFoundException('Пользователь с таким email не найден.')
     }
 
     const isValidPassword = await verify(user.password, dto.password)
 
     if (!isValidPassword) {
+      this.logger.warn(
+        `Вход отклонён — неверный пароль: id=${user.id}, email=${user.email}`,
+      )
       throw new UnauthorizedException('Неверный пароль.')
     }
 
+    this.logger.log(`Успешный вход: id=${user.id}, email=${user.email}`)
     return this.saveSession(req, user)
   }
 
-  public async logout(req: Request, res: Response):Promise<void> {
+  public async logout(req: Request, res: Response): Promise<void> {
+    const sessionId = req.session.id
+    const userId = req.session.userId
+    this.logger.log(
+      `Выход из системы: userId=${userId}, sessionId=${sessionId}`,
+    )
+
     return new Promise((resolve, reject) => {
       req.session.destroy((err) => {
         if (err) {
+          this.logger.error(
+            `Ошибка уничтожения сессии: userId=${userId}, sessionId=${sessionId}`,
+            err,
+          )
           return reject(
             new InternalServerErrorException('Ошибка при уничтожении сессии.'),
           )
         }
+        this.logger.log(
+          `Сессия уничтожена: userId=${userId}, sessionId=${sessionId}`,
+        )
         res.clearCookie(this.configService.getOrThrow<string>('SESSION_NAME'))
         resolve()
       })

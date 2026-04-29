@@ -33,3 +33,20 @@ export const TokenType = {
 } as const
 
 export type TokenType = (typeof TokenType)[keyof typeof TokenType]
+
+
+export const BotStatus = {
+  ACTIVE: 'ACTIVE',
+  STOPPED: 'STOPPED',
+  ERROR: 'ERROR'
+} as const
+
+export type BotStatus = (typeof BotStatus)[keyof typeof BotStatus]
+
+
+export const BotMessageStatus = {
+  SENT: 'SENT',
+  FAILED: 'FAILED'
+} as const
+
+export type BotMessageStatus = (typeof BotMessageStatus)[keyof typeof BotMessageStatus]

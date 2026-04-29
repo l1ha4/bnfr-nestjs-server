@@ -1,0 +1,79 @@
+-- CreateEnum
+CREATE TYPE "UserRole" AS ENUM ('REGULAR', 'ADMIN');
+
+-- CreateEnum
+CREATE TYPE "AuthMethod" AS ENUM ('CREDENTIALS', 'GOOGLE', 'YANDEX');
+
+-- CreateEnum
+CREATE TYPE "TokenType" AS ENUM ('VERIFICATION', 'TWO_FACTOR', 'PASSWORD_RESET');
+
+-- CreateEnum
+CREATE TYPE "BotStatus" AS ENUM ('ACTIVE', 'STOPPED', 'ERROR');
+
+-- CreateTable
+CREATE TABLE "users" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
+    "displayName" TEXT NOT NULL,
+    "picture" TEXT,
+    "role" "UserRole" NOT NULL DEFAULT 'REGULAR',
+    "is_verified" BOOLEAN NOT NULL DEFAULT false,
+    "is_two_factor_enabled" BOOLEAN NOT NULL DEFAULT false,
+    "method" "AuthMethod" NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "accounts" (
+    "id" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "Provider" TEXT NOT NULL,
+    "refresh_token" TEXT,
+    "access_token" TEXT,
+    "expires_at" INTEGER NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "accounts_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "tokens" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "type" "TokenType" NOT NULL,
+    "expires_in" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "tokens_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Bot" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "status" "BotStatus" NOT NULL DEFAULT 'STOPPED',
+    "ownerId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Bot_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "tokens_token_key" ON "tokens"("token");
+
+-- AddForeignKey
+ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Bot" ADD CONSTRAINT "Bot_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
