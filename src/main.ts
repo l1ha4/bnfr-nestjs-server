@@ -13,6 +13,27 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule)
 
   const config = app.get(ConfigService)
+  const isProduction = config.get<string>('NODE_ENV') === 'production'
+
+  if (isProduction) {
+    // Required behind reverse proxy (nginx/cloudflare) for secure cookies.
+    app.getHttpAdapter().getInstance().set('trust proxy', 1)
+  }
+
+  const sessionDomain = config.getOrThrow<string>('SESSION_DOMAIN')
+  const sessionSecure = parseBoolean(
+    config.getOrThrow<string>('SESSION_SECURE'),
+  )
+  const cookieDomain =
+    sessionDomain === 'localhost' || sessionDomain === '127.0.0.1'
+      ? undefined
+      : sessionDomain
+
+  const corsOrigins = config
+    .getOrThrow<string>('ALLOWED_ORIGINS')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
 
   const redis = createClient({ url: config.getOrThrow<string>('REDIS_URL') })
   await redis.connect()
@@ -32,11 +53,11 @@ async function bootstrap() {
       resave: true,
       saveUninitialized: false,
       cookie: {
-        domain: config.getOrThrow<string>('SESSION_DOMAIN'),
+        domain: cookieDomain,
         maxAge: ms(config.getOrThrow<StringValue>('SESSION_MAX_AGE')),
         httpOnly: parseBoolean(config.getOrThrow<string>('SESSION_HTTP_ONLY')),
-        secure: parseBoolean(config.getOrThrow<string>('SESSION_SECURE')),
-        sameSite: 'lax',
+        secure: sessionSecure,
+        sameSite: sessionSecure ? 'none' : 'lax',
       },
       store: new RedisStore({
         client: redis,
@@ -46,7 +67,7 @@ async function bootstrap() {
   )
 
   app.enableCors({
-    origin: config.getOrThrow<string>('ALLOWED_ORIGINS'),
+    origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
     credentials: true,
     exposedHeaders: ['set-cookie'],
   })
