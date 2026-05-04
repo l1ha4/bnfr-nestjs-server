@@ -8,7 +8,6 @@ import { UserModule } from './user/user.module'
 import { ProviderModule } from './auth/provider/provider.module'
 import { DS_BOT_MODULES } from './app/ds-bot'
 
-
 @Module({
   imports: [
     ConfigModule.forRoot({
