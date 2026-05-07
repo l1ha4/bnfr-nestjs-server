@@ -1,6 +1,6 @@
 // discord-bot.manager.ts
 import { Injectable } from '@nestjs/common'
-import { Client, GatewayIntentBits } from 'discord.js'
+import { ChannelType, Client, GatewayIntentBits } from 'discord.js'
 
 @Injectable()
 export class DiscordBotManager {
@@ -60,5 +60,28 @@ export class DiscordBotManager {
       icon: guild.icon,
       approximateMemberCount: guild.approximateMemberCount,
     }))
+  }
+
+  async getGuildTextChannels(botId: string, serverId: string) {
+    const client = this.clients.get(botId)
+
+    if (!client) {
+      throw new Error('Bot is not running')
+    }
+
+    const guild = await client.guilds.fetch(serverId)
+    const channels = await guild.channels.fetch()
+
+    return channels
+      .filter(
+        (channel): channel is NonNullable<typeof channel> =>
+          channel !== null && channel.type === ChannelType.GuildText,
+      )
+      .map((channel) => ({
+        id: channel.id,
+        name: channel.name,
+        parentId: channel.parentId,
+        position: channel.position,
+      }))
   }
 }
