@@ -1,13 +1,15 @@
 import {
-  IsHexColor,
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
   IsUrl,
+  IsArray,
   Max,
   MaxLength,
   Min,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator'
 import { Type } from 'class-transformer'
@@ -72,6 +74,22 @@ export class EmbedDto {
   fields?: EmbedFieldDto[]
 }
 
+export class ListItemFormMessageDto {
+  @IsString()
+  @IsNotEmpty()
+  name!: string
+
+  @IsIn(['text', 'embed'])
+  type!: 'text' | 'embed'
+
+  @ValidateIf((o) => o.type === 'text')
+  @IsString()
+  @ValidateIf((o) => o.type === 'embed')
+  @ValidateNested()
+  @Type(() => EmbedDto)
+  content!: EmbedDto | string
+}
+
 export class SendMessageDto {
   @IsString()
   @IsNotEmpty()
@@ -93,4 +111,10 @@ export class SendMessageDto {
   @ValidateNested()
   @Type(() => EmbedDto)
   embed?: EmbedDto
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ListItemFormMessageDto)
+  listItemsFormMessage?: ListItemFormMessageDto[]
 }
