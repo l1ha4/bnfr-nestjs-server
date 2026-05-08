@@ -10,6 +10,9 @@ import { NextFunction, Request, Response } from 'express'
 import { RedisStore } from 'connect-redis'
 import { parseBoolean } from './libs/common/utils/parse-boolean.utils'
 
+const normalizeOrigin = (origin: string): string =>
+  origin.trim().replace(/\/+$/, '')
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
   const logger = new Logger('HTTP')
@@ -39,8 +42,9 @@ async function bootstrap() {
   const corsOrigins = config
     .getOrThrow<string>('ALLOWED_ORIGINS')
     .split(',')
-    .map((origin) => origin.trim())
+    .map(normalizeOrigin)
     .filter(Boolean)
+  const corsOriginSet = new Set(corsOrigins)
 
   const redis = createClient({ url: config.getOrThrow<string>('REDIS_URL') })
   await redis.connect()
@@ -49,7 +53,15 @@ async function bootstrap() {
   // Preflight OPTIONS requests must receive CORS headers before any other
   // middleware can short-circuit the request and send a response without them.
   app.enableCors({
-    origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true)
+        return
+      }
+
+      const normalizedOrigin = normalizeOrigin(origin)
+      callback(null, corsOriginSet.has(normalizedOrigin))
+    },
     credentials: true,
     // NOTE: 'Set-Cookie' is a forbidden response header; browsers block JS
     // access to it regardless of exposedHeaders. Do not list it here.
