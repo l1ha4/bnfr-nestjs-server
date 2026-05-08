@@ -41,3 +41,12 @@
 - **@types/express-session** — типы TypeScript для `express-session`.
 - **@types/cookie-parser** — типы TypeScript для `cookie-parser`.
 - **@types/react** — базовые TypeScript-типы для React (`JSX`, hooks, компоненты).
+
+## Production cookie auth checklist
+
+- API должен работать по HTTPS.
+- `ALLOWED_ORIGINS` должен содержать точный origin фронтенда (без `*`).
+- Для cross-site cookie в production нужен `SESSION_SECURE=true`.
+- При `SESSION_SECURE=true` cookie автоматически выставляется с `SameSite=None`.
+- `SESSION_DOMAIN` указывайте только для hostname. Для IP/localhost домен куки должен быть пустым.
+- Пример production переменных: `.env.production.example`.

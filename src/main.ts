@@ -25,7 +25,7 @@ async function bootstrap() {
     app.getHttpAdapter().getInstance().set('trust proxy', 1)
   }
 
-  const sessionDomain = config.getOrThrow<string>('SESSION_DOMAIN')
+  const sessionDomain = config.get<string>('SESSION_DOMAIN')?.trim() ?? ''
   const sessionSecure = parseBoolean(
     config.getOrThrow<string>('SESSION_SECURE'),
   )
@@ -33,6 +33,7 @@ async function bootstrap() {
   // Browsers silently reject Set-Cookie with Domain=<ip>. Always set undefined for IPs.
   const isIpAddress = /^(\d{1,3}\.){3}\d{1,3}$/.test(sessionDomain)
   const cookieDomain =
+    !sessionDomain ||
     sessionDomain === 'localhost' ||
     sessionDomain === '127.0.0.1' ||
     isIpAddress
@@ -45,6 +46,22 @@ async function bootstrap() {
     .map(normalizeOrigin)
     .filter(Boolean)
   const corsOriginSet = new Set(corsOrigins)
+
+  if (corsOrigins.length === 0) {
+    throw new Error('ALLOWED_ORIGINS must contain at least one origin')
+  }
+
+  if (isProduction && !sessionSecure) {
+    throw new Error(
+      'SESSION_SECURE must be true in production for cookie-based auth',
+    )
+  }
+
+  if (sessionSecure && corsOrigins.some((origin) => origin.startsWith('http://'))) {
+    logger.warn(
+      'ALLOWED_ORIGINS contains http:// entries while SESSION_SECURE=true. Use HTTPS origins in production.',
+    )
+  }
 
   const redis = createClient({ url: config.getOrThrow<string>('REDIS_URL') })
   await redis.connect()
