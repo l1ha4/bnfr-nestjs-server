@@ -19,6 +19,11 @@ import { ConfigService } from '@nestjs/config'
 export class AuthService {
   private readonly logger = new Logger(AuthService.name)
 
+  private sanitizeUser<T extends { password?: string }>(user: T): Omit<T, 'password'> {
+    const { password, ...safeUser } = user
+    return safeUser
+  }
+
   public constructor(
     private readonly userService: UserService,
     private readonly configService: ConfigService,
@@ -125,7 +130,7 @@ export class AuthService {
         this.logger.log(
           `Сессия успешно сохранена в Redis. Session ID: ${req.session.id}`,
         )
-        resolve({ user })
+        resolve({ user: this.sanitizeUser(user) })
       })
     })
   }
