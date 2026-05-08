@@ -26,8 +26,13 @@ async function bootstrap() {
   const sessionSecure = parseBoolean(
     config.getOrThrow<string>('SESSION_SECURE'),
   )
+  // RFC 6265: Domain attribute must be a registered hostname, not an IP address.
+  // Browsers silently reject Set-Cookie with Domain=<ip>. Always set undefined for IPs.
+  const isIpAddress = /^(\d{1,3}\.){3}\d{1,3}$/.test(sessionDomain)
   const cookieDomain =
-    sessionDomain === 'localhost' || sessionDomain === '127.0.0.1'
+    sessionDomain === 'localhost' ||
+    sessionDomain === '127.0.0.1' ||
+    isIpAddress
       ? undefined
       : sessionDomain
 
@@ -39,6 +44,16 @@ async function bootstrap() {
 
   const redis = createClient({ url: config.getOrThrow<string>('REDIS_URL') })
   await redis.connect()
+
+  // CORS must be registered first — before session and cookieParser.
+  // Preflight OPTIONS requests must receive CORS headers before any other
+  // middleware can short-circuit the request and send a response without them.
+  app.enableCors({
+    origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
+    credentials: true,
+    // NOTE: 'Set-Cookie' is a forbidden response header; browsers block JS
+    // access to it regardless of exposedHeaders. Do not list it here.
+  })
 
   app.use(cookieParser(config.getOrThrow<string>('COOKIE_SECRET')))
 
@@ -63,10 +78,16 @@ async function bootstrap() {
       resave: true,
       saveUninitialized: false,
       cookie: {
+        // IP addresses are not valid Domain attribute values per RFC 6265.
+        // Browsers silently reject Set-Cookie when Domain is an IP.
+        // Only set domain for real hostnames; leave undefined for IPs and localhost.
         domain: cookieDomain,
         maxAge: ms(config.getOrThrow<StringValue>('SESSION_MAX_AGE')),
         httpOnly: parseBoolean(config.getOrThrow<string>('SESSION_HTTP_ONLY')),
         secure: sessionSecure,
+        // SameSite=None requires Secure=true (HTTPS).
+        // SameSite=Lax blocks cookies on cross-site fetch requests (e.g. localhost → remote IP).
+        // For cross-origin HTTP dev, use a Vite proxy instead of direct cross-origin calls.
         sameSite: sessionSecure ? 'none' : 'lax',
       },
       store: new RedisStore({
@@ -75,12 +96,6 @@ async function bootstrap() {
       }),
     }),
   )
-
-  app.enableCors({
-    origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
-    credentials: true,
-    exposedHeaders: ['set-cookie'],
-  })
 
   app.use((req: Request, res: Response, next: NextFunction) => {
     const startedAt = Date.now()
