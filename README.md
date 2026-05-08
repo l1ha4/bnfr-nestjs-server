@@ -32,8 +32,6 @@
 - **@react-email/components** — React-компоненты для верстки email шаблонов.
 - **@react-email/html** — HTML-рендер email шаблонов из React.
 
-
-
 ## Overview
 
 - **@trivago/prettier-plugin-sort-imports** — плагин для Prettier, автоматически сортирует import'ы.
@@ -46,6 +44,8 @@
 
 - API должен работать по HTTPS.
 - `ALLOWED_ORIGINS` должен содержать точный origin фронтенда (без `*`).
+- Для `ALLOWED_ORIGINS` важна схема: `http://site` и `https://site` это разные origin.
+- Для нескольких origin используйте список через запятую: `https://site1,http://site1`.
 - Для cross-site cookie в production нужен `SESSION_SECURE=true`.
 - При `SESSION_SECURE=true` cookie автоматически выставляется с `SameSite=None`.
 - `SESSION_DOMAIN` указывайте только для hostname. Для IP/localhost домен куки должен быть пустым.

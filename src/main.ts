@@ -57,7 +57,10 @@ async function bootstrap() {
     )
   }
 
-  if (sessionSecure && corsOrigins.some((origin) => origin.startsWith('http://'))) {
+  if (
+    sessionSecure &&
+    corsOrigins.some((origin) => origin.startsWith('http://'))
+  ) {
     logger.warn(
       'ALLOWED_ORIGINS contains http:// entries while SESSION_SECURE=true. Use HTTPS origins in production.',
     )
@@ -77,7 +80,13 @@ async function bootstrap() {
       }
 
       const normalizedOrigin = normalizeOrigin(origin)
-      callback(null, corsOriginSet.has(normalizedOrigin))
+      const isAllowedOrigin = corsOriginSet.has(normalizedOrigin)
+
+      if (!isAllowedOrigin) {
+        logger.warn(`CORS blocked origin: ${normalizedOrigin}`)
+      }
+
+      callback(null, isAllowedOrigin)
     },
     credentials: true,
     // NOTE: 'Set-Cookie' is a forbidden response header; browsers block JS
